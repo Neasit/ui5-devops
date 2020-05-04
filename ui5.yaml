@@ -1,0 +1,34 @@
+specVersion: '2.0'
+metadata:
+  name: local.calendar
+type: application
+resources:
+  configuration:
+    paths:
+      webapp: webapp
+server:
+  customMiddleware:
+    - name: oDataProxy
+      beforeMiddleware: serveResources
+    - name: customSource
+      beforeMiddleware: serveResources
+  settings:
+    httpPort: 3070
+    httpsPort: 3071
+---
+specVersion: "1.0"
+kind: extension
+type: server-middleware
+metadata:
+  name: oDataProxy
+middleware:
+  path: utils/serverBackend.js
+---
+specVersion: "1.0"
+kind: extension
+type: server-middleware
+metadata:
+  name: customSource
+middleware:
+  path: utils/serverResource.js
+

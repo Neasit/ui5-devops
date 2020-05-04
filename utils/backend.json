@@ -1,0 +1,9 @@
+{
+    "sap": {
+        "target": "https://pslint-e.one-erp.telekom.de:443",
+        "changeOrigin": true,
+        "cookieDomainRewrite": "",
+        "cookiePathRewrite": "",
+        "secure": false
+    }
+}

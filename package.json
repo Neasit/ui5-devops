@@ -1,0 +1,26 @@
+{
+  "name": "ui5-devops",
+  "version": "0.0.1",
+  "author": "Neasit",
+  "scripts": {
+    "prettier-js": "prettier --write webapp/**/*.js",
+    "lint": "eslint --debug webapp/ || exit 0",
+    "lint:write": "eslint --debug webapp/ --fix || exit 0",
+    "pretty-xml": "js-beautify -r ./webapp/view/**/*.xml --type=html --config=.jsbeautifyrc"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^2.1.0",
+    "babel-eslint": "^8.2.3",
+    "http-proxy": "^1.17.0",
+    "serve-static": "^1.14.1",
+    "eslint": "^5.13.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-babel": "^5.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-prettier": "^2.6.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "grunt": "^1.1.0",
+    "js-beautify": "^1.8.9",
+    "prettier": "^1.14.3"
+  }
+}
