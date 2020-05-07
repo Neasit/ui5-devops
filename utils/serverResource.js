@@ -1,3 +1,4 @@
+// TODO: switch to standard for UI5 Tooling module (log, config ...)
 module.exports = function({
   resources,
   options

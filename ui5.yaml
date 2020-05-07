@@ -8,9 +8,9 @@ resources:
       webapp: webapp
 server:
   customMiddleware:
-    - name: oDataProxy
-      beforeMiddleware: serveResources
     - name: customSource
+      beforeMiddleware: serveResources
+    - name: oDataProxy
       beforeMiddleware: serveResources
   settings:
     httpPort: 3070
