@@ -1,7 +1,7 @@
-sap.ui.define(['local/calendar/controller/BaseController'], function(BaseController) {
+sap.ui.define(['local/experiment/controller/BaseController'], function(BaseController) {
   'use strict';
 
-  return BaseController.extend('local.calendar.controller.App', {
+  return BaseController.extend('local.experiment.controller.App', {
     onInit: function() {
       var oViewModel = new sap.ui.model.json.JSONModel({
         busy: false,

@@ -9,9 +9,12 @@
     "pretty-xml": "js-beautify -r ./webapp/view/**/*.xml --type=html --config=.jsbeautifyrc"
   },
   "devDependencies": {
-    "@ui5/cli": "^2.1.0",
+    "@ui5/cli": "^2.2.0",
+    "@ui5/logger": "^1.0.2",
     "babel-eslint": "^8.2.3",
-    "http-proxy": "^1.17.0",
+    "http-proxy-middleware": "^1.0.3",
+    "ui5-middleware-proxy": "^0.0.4",
+    "ui5-middleware-servestatic": "*",
     "serve-static": "^1.14.1",
     "eslint": "^5.13.0",
     "eslint-config-airbnb-base": "^13.1.0",
@@ -19,8 +22,15 @@
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^4.0.1",
-    "grunt": "^1.1.0",
+    "grunt": "^1.0.1",
     "js-beautify": "^1.8.9",
-    "prettier": "^1.14.3"
+    "prettier": "^1.14.3",
+    "grunt-nwabap-ui5uploader": "^1.0.6"
+  },
+  "ui5": {
+    "dependencies": [
+      "ui5-middleware-proxy",
+      "ui5-middleware-servestatic"
+    ]
   }
 }

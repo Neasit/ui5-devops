@@ -1,5 +1,5 @@
 <mvc:View
-  controllerName="local.calendar.controller.NotFound"
+  controllerName="local.experiment.controller.NotFound"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
 >

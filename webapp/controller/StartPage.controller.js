@@ -1,7 +1,7 @@
-sap.ui.define(['local/calendar/controller/BaseController'], function(BaseController) {
+sap.ui.define(['local/experiment/controller/BaseController'], function(BaseController) {
   'use strict';
 
-  return BaseController.extend('local.calendar.controller.StartPage', {
+  return BaseController.extend('local.experiment.controller.StartPage', {
     // sLang: null, Test
 
     onInit: function() {

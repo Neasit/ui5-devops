@@ -1,6 +1,6 @@
 specVersion: '2.0'
 metadata:
-  name: local.calendar
+  name: local.experiment
 type: application
 resources:
   configuration:
@@ -8,27 +8,20 @@ resources:
       webapp: webapp
 server:
   customMiddleware:
-    - name: customSource
-      beforeMiddleware: serveResources
-    - name: oDataProxy
-      beforeMiddleware: serveResources
+    - name: ui5-middleware-servestatic
+      afterMiddleware: compression
+      mountPath: /resources
+      configuration:
+        rootPath: "C:/SAPUI5/1.52.31/resources"
+    - name: ui5-middleware-proxy
+      afterMiddleware: compression
+      mountPath: /sap
+      configuration:
+        target: "https://server.com:443"
+        secure: false
+        changeOrigin: true
+        auth: "user:password"
+        debug: true
   settings:
     httpPort: 3070
     httpsPort: 3071
----
-specVersion: "1.0"
-kind: extension
-type: server-middleware
-metadata:
-  name: oDataProxy
-middleware:
-  path: utils/serverBackend.js
----
-specVersion: "1.0"
-kind: extension
-type: server-middleware
-metadata:
-  name: customSource
-middleware:
-  path: utils/serverResource.js
-

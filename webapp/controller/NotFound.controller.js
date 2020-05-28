@@ -1,7 +1,7 @@
-sap.ui.define(['local/calendar/controller/BaseController'], function(BaseController) {
+sap.ui.define(['local/experiment/controller/BaseController'], function(BaseController) {
   'use strict';
 
-  return BaseController.extend('local.calendar.controller.NotFound', {
+  return BaseController.extend('local.experiment.controller.NotFound', {
     /**
      * Navigates to the masterPR when the link is pressed
      * @public

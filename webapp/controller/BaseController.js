@@ -7,12 +7,12 @@ sap.ui.define(
     'sap/m/Text',
     'sap/m/Label',
     'sap/m/Input',
-    'local/calendar/model/formatter',
+    'local/experiment/model/formatter',
   ],
   function(Controller, MessageToast, Dialog, Button, Text, Label, Input, formatter) {
     'use strict';
 
-    return Controller.extend('local.calendar.controller.BaseController', {
+    return Controller.extend('local.experiment.controller.BaseController', {
       formatter: formatter,
       _arguments: null,
       _oi18n: null,

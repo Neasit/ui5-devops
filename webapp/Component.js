@@ -1,11 +1,10 @@
-sap.ui.define(['sap/ui/core/UIComponent', 'sap/ui/Device', 'local/calendar/model/models'], function(
+sap.ui.define(['sap/ui/core/UIComponent', 'local/experiment/model/models'], function(
   UIComponent,
-  Device,
   models
 ) {
   'use strict';
 
-  return UIComponent.extend('local.calendar.Component', {
+  return UIComponent.extend('local.experiment.Component', {
     metadata: {
       manifest: 'json',
     },
