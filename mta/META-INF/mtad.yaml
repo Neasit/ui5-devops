@@ -1,0 +1,15 @@
+_schema-version: "3.1"
+ID: local.sol.experiment
+version: 0.0.1
+modules:
+- name: ui5devops
+  type: com.sap.hcp.html5
+  path: ui5devops
+  parameters:
+    display-name: ui5devops
+    name: ui5devops
+    version: 0.0.2
+parameters:
+  description: test UI5 DevOps
+  hcp-deployer-version: 0.0.2
+  title: UI5 DevOps

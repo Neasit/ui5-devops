@@ -12,16 +12,12 @@ server:
       afterMiddleware: compression
       mountPath: /resources
       configuration:
-        rootPath: "C:/SAPUI5/1.52.31/resources"
+        rootPath: "C:/SAPUI5/1.71.5/resources"
     - name: ui5-middleware-proxy
       afterMiddleware: compression
       mountPath: /sap
       configuration:
-        target: "https://server.com:443"
-        secure: false
-        changeOrigin: true
-        auth: "user:password"
-        debug: true
+        debug: false
   settings:
     httpPort: 3070
     httpsPort: 3071

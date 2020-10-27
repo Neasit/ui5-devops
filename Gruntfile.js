@@ -1,15 +1,17 @@
 /*
-    Base grunt script for build and deploy SAP UI5 Application
-    version: 1.2
+    Base grunt script on PSL INT(PM) for build and deploy SAP UI5 Application
+    version: 2.0
     1.1 - added ESLint, Server.js
     1.2 - added babel task and manage versions
-    author: T-Systems RUS, Andrey Danilin (c)
+    2.0 - move tools to npm package (grunt-tdevopsui5)
+    author: T-Systems RUS, Andrey Danilin
 */
 module.exports = function(grunt) {
+  var fs = require('fs');
+  var yaml = require('js-yaml');
   var process = require('process');
   var path = require('path');
 
-  var oExtFunctions = require('./extFn');
   var oConfig = grunt.file.readJSON('gruntConfig.json');
   var oDeployConfig;
   if (grunt.file.exists('deployConfig.json')) {
@@ -30,11 +32,53 @@ module.exports = function(grunt) {
   if (oDeployConfig) {
     let sSystem = oDeployConfig.WBRequest.slice(0, 3);
     if (sSystem) {
-      oServerInfo.URL =
+      oServerInfo.fullURL =
         oConfig.servers[sSystem].serverURL + ':' + oConfig.servers[sSystem].serverPort;
+      oServerInfo.URL = oConfig.servers[sSystem].serverURL;
       oServerInfo.Client = oConfig.servers[sSystem].serverClient;
     }
   }
+
+  var updateMTAVersion = function(Localgrunt, srcVersion, scrMTA) {
+    var relativePath = path.relative(process.cwd(), srcVersion);
+    var versionPath = srcVersion + '/version.json';
+    relativePath = path.relative(process.cwd(), scrMTA);
+    var mtaPath = scrMTA + '/mta.yaml';
+    var sData = '{}';
+    if (fs.existsSync(versionPath)) {
+      sData = fs.readFileSync(versionPath, { encoding: 'utf-8' });
+    }
+    var oVersion = JSON.parse(sData);
+    var sCurrentVersion =
+      oVersion.current && oVersion.current.version ? oVersion.current.version : '0.0.1';
+    var yamlContent;
+    var yamlParsed;
+    try {
+      yamlContent = fs.readFileSync(mtaPath, { encoding: 'utf-8' });
+      yamlParsed = yaml.safeLoad(yamlContent);
+    } catch (e) {
+      Localgrunt.log.writeln('Error by read mta.yaml');
+      Localgrunt.log.writeln(e);
+    }
+    if (yamlParsed) {
+      if (!yamlParsed.parameters) {
+        yamlParsed.parameters = {};
+      }
+      yamlParsed.parameters['hcp-deployer-version'] = sCurrentVersion;
+      if (yamlParsed.modules && yamlParsed.modules.length) {
+        yamlParsed.modules.forEach(function(item) {
+          if (!item.parameters) {
+            item.parameters = {};
+          }
+          item.parameters.version = sCurrentVersion;
+        });
+      }
+
+      yamlContent = yaml.safeDump(yamlParsed);
+      fs.writeFileSync(mtaPath, yamlContent);
+    }
+    return true;
+  };
 
   grunt.initConfig({
     pkg: oPkg,
@@ -44,327 +88,159 @@ module.exports = function(grunt) {
 
     dir: oDir,
 
-    // rename to dbg
-    fnRename: function(dest, src) {
-      // this.js -> this-dbg.js
-      var destinationFilename = '';
-      if (src.endsWith('.controller.js') > 0) {
-        destinationFilename = dest + src.replace(/\.controller\.js$/, '-dbg.controller.js');
-      } else {
-        destinationFilename = dest + src.replace(/\.js$/, '-dbg.js');
-      }
-      return destinationFilename;
-    },
-
-    copy: {
-      temp: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.src %>',
-            src: ['**/*.*', '!**/*.md'],
-            dest: '<%= dir.temp %>/',
-          },
-        ],
-      },
-      dbg: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.temp %>',
-            src: ['**/*.*', '!libs/*.*', '!**/*-preload.js'],
-            dest: '<%= dir.temp %>/',
-            rename: '<%= fnRename %>',
-          },
-        ],
-      },
-      dist: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.temp %>',
-            src: ['**'],
-            dest: '<%= dir.dest %>/',
-          },
-        ],
-      },
-      version: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.src %>',
-            src: ['version.json'],
-            dest: '<%= dir.dest %>/',
-          },
-        ],
-      },
-      resourcesLib: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.dest %>',
-            src: ['**', '**/.*', '!**/*.md'],
-            dest: '<%= dir.resourceDir %>/<%= conf.appIndex %>',
-          },
-        ],
+    run: {
+      options: {},
+      mta_build: {
+        exec: 'npm run mtabuild',
       },
     },
 
-    clean: {
-      dist: '<%= dir.dest %>',
-      temp: '<%= dir.temp %>',
-    },
-
-    openui5_preload: {
-      components: {
+    tdevopsui5_build: {
+      default: {
         options: {
-          resources: {
-            cwd: '<%= dir.temp %>',
-            prefix: '<%= conf.appIndex %>',
-            src: ['**', '**/.*'],
-          },
-          dest: '<%= dir.temp %>',
-          compatVersion: '1.52',
+          appName: '<%= pkg.name %>',
+          // folders
+          src: '<%= dir.src %>',
+          dest: '<%= dir.dest %>',
+          tmp: '<%= dir.temp %>',
+          ui5Resource: '<%= dir.resourceDir %>',
+          // options
+          babel: true,
+          // preload
+          appIndex: '<%= conf.appIndex %>',
+          ui5version: '<%= conf.ui5version %>',
+          library: false,
+          lib_comp: false,
+          lib_to_resources: false,
+          customOptions: {}, // not used for now
         },
-        components: true,
-      },
-      library: {
-        options: {
-          resources: {
-            cwd: '<%= dir.temp %>',
-            prefix: '<%= conf.appIndex %>',
-            src: ['**', '**/.*'],
-          },
-          dest: '<%= dir.temp %>',
-          compatVersion: '1.52',
-        },
-        libraries: '<%= conf.appIndex %>',
-      },
-      application: {
-        options: {
-          resources: {
-            cwd: '<%= dir.temp %>',
-            prefix: '<%= conf.appIndex %>',
-          },
-          dest: '<%= dir.temp %>',
-          compatVersion: '1.52',
-        },
-        components: '<%= conf.appIndex %>',
       },
     },
 
-    cssmin: {
-      temp: {
-        files: [
-          {
-            expand: true,
-            src: '**/*.css',
-            dest: '<%= dir.temp %>/',
-            cwd: '<%= dir.temp %>',
-          },
-        ],
-      },
-    },
-
-    uglify: {
-      temp: {
-        options: {
-          banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
-        },
-        files: [
-          {
-            expand: true,
-            cwd: '<%= dir.temp %>',
-            src: ['**/*.js', '!**/*preload.js', '!**/*-dbg*'],
-            dest: '<%= dir.temp %>/',
-          },
-        ],
-      },
-    },
-
-    babel: {
+    tdevopsui5_version: {
       options: {
-        sourceMap: 'inline',
-        presets: ['@babel/preset-env'],
-      },
-      temp: {
-        files: [
-          {
-            expand: true, // Enable dynamic expansion.
-            cwd: '<%= dir.temp %>/', // Src matches are relative to this path.
-            src: ['**/*.js', '!**/*-dbg*', '!**/libs/*.*', '!**/*-preload.js'],
-            dest: '<%= dir.temp %>/', // Destination path prefix.
-          },
-        ],
-      },
-    },
-
-    // Deploy based on gruntConfig.json file
-    nwabap_ui5uploader: {
-      options: {
-        conn: {
-          server: '<%= server.URL %>',
-          client: '<%= server.Client %>',
-          // useStrictSSL: false  // for GUS
-        },
-        auth: {
-          user: '<%= depConf.user %>',
-          pwd: '<%= depConf.pwd %>',
-        },
-      },
-      application_deploy: {
-        options: {
-          ui5: {
-            package: '<%= conf.abapPackage %>',
-            bspcontainer: '<%= conf.BSPApp %>',
-            bspcontainer_text: '<%= conf.BSPDesc %>',
-            transportno: '<%= depConf.WBRequest %>',
-            calc_appindex: true,
-          },
-          resources: {
-            cwd: '<%= dir.dest %>',
-            src: '**/*.*',
-          },
-        },
-      },
-    },
-
-    addVersion: {
-      options: {
-        src: '<%= dir.src %>',
+        dest: '<%= dir.src %>',
         user: '<%= depConf.user %>',
-        TR: '<%= depConf.WBRequest %>',
+        transport: '<%= depConf.WBRequest %>',
       },
       dev: {
-        type: 'D',
-        note: 'Develop version (not stable)',
+        options: {
+          type: 'D',
+          tag: false,
+          tagText: '',
+          note: 'Small fix (micro version)',
+        },
+      },
+      main: {
+        options: {
+          type: 'M',
+          tag: false,
+          tagText: '',
+          note: 'Maintenance version (minor version)',
+        },
       },
       prod: {
-        type: 'P',
-        note: 'Productive version (stable)',
-        tag: true,
-        tagMessage: 'Version transfered to PRD',
-      },
-      maint: {
-        type: 'M',
-        note: 'Maintenance version (test ready)',
-      },
-    },
-
-    gittag: {
-      addtag: {
         options: {
-          tag: '', // will be setted by prev task
-          message: '', // will be setted by prev task
+          type: 'P',
+          tag: true,
+          tagText: 'Release version',
+          note: 'Production version (major version)',
         },
       },
     },
 
-    gitlog: {
-      getCommit: {
+    tdevopsui5_deploy: {
+      options: {
+        // abap options
+        package: '<%= conf.abapPackage %>',
+        bspcontainer: '<%= conf.BSPApp %>',
+        bspcontainer_text: '<%= conf.BSPDesc %>',
+        transportno: '<%= depConf.WBRequest %>',
+        calc_appindex: true,
+        // folder
+        dest: '<%= dir.dest %>',
+        // server info
+        server: '<%= server.fullURL %>',
+        client: '<%= server.Client %>',
+        useStrictSSL: false,
+        // credentional
+        user: '<%= depConf.user %>',
+        pwd: '<%= depConf.pwd %>',
+      },
+      main: {
         options: {
-          prop: 'gitlog.getCommit.result',
-          number: 1,
+          // version
+          version: 'M', // 'D', 'P', 'M'
+        },
+      },
+      prod: {
+        options: {
+          // version
+          version: 'P', // 'D', 'P', 'M'
+        },
+      },
+      dev: {
+        options: {
+          // version
+          version: 'D', // 'D', 'P', 'M'
+        },
+      },
+      simple: {
+        options: {
+          // version
+          version: null, // 'D', 'P', 'M'
+        },
+      },
+    },
+
+    tdevopsui5_server: {
+      server: {
+        options: {
+          remoteServer: '<%= server.URL %>',
+          remoteUrlPrefix: '/sap',
+          user: '<%= depConf.user %>',
+          pwd: '<%= depConf.pwd %>',
+          localPort: '3020',
+          // resources
+          ui5resources: '<%= dir.resourceDir %>',
+          appSource: '<%= dir.src %>',
         },
       },
     },
   });
 
-  // Load requered tasks
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-openui5');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-cssmin');
-  grunt.loadNpmTasks('grunt-nwabap-ui5uploader');
-  grunt.loadNpmTasks('grunt-babel');
-  grunt.loadNpmTasks('grunt-git');
+  grunt.loadNpmTasks('grunt-tdevopsui5');
 
-  // User tasks
-  grunt.registerTask('createResourcesJson', 'Create Resources.json file', function() {
-    grunt.log.writeln('starting running createResourcesJson');
-    oExtFunctions.createResourceJson(path.join(process.cwd(), oDir.dest));
-    grunt.log.writeln('finish running createResourcesJson');
-  });
+  grunt.loadNpmTasks('grunt-run');
 
-  grunt.registerTask(
-    'createsCachebusterInfoJson',
-    'Create sap-ui-cachebuster-info.json file',
-    function() {
-      grunt.log.writeln('starting running createCachebusterInfoJson');
-      oExtFunctions.createCachebusterInfoJson(path.join(process.cwd(), oDir.dest));
-      grunt.log.writeln('finish running createCachebusterInfoJson');
-    }
-  );
-
-  grunt.registerMultiTask('addVersion', 'Create new version of app', function() {
-    grunt.config.requires('addVersion.options');
-    grunt.config.requires('addVersion.' + this.target);
-    grunt.log.writeln('starting running versionAdd:' + this.target);
-    var aResults = grunt.config.get('gitlog.getCommit.result');
-    var sVersion = oExtFunctions.addVersion(
+  grunt.registerTask('updateMTAVersion', 'Update MTA Version from version.json', function() {
+    grunt.log.writeln('starting running updateMTAVersion');
+    updateMTAVersion(
       grunt,
-      grunt.config('addVersion.options.src'),
-      this.data.type || null,
-      grunt.config('addVersion.options.TR'),
-      grunt.config('addVersion.options.user'),
-      this.data.note || '',
-      aResults && aResults.length ? aResults[0].hash : ''
+      path.join(process.cwd(), this.args[0]),
+      path.join(process.cwd(), this.args[1])
     );
-    grunt.log.writeln('finish running versionAdd');
-    if (this.data.tag) {
-      grunt.log.writeln('starting running gitTag');
-      grunt.config.set('gittag.addtag.options.tag', sVersion);
-      grunt.config.set('gittag.addtag.options.message', this.data.tagMessage);
-      grunt.task.run('gitTagByDeploy');
-      grunt.log.writeln('finish running gitTag');
-    }
+    grunt.log.writeln('finish running updateMTAVersion');
   });
-
-  grunt.registerTask('gitTagByDeploy', ['gittag:addtag']);
-
-  grunt.registerTask('versiond', ['gitlog', 'addVersion:dev', 'copy:version']);
-  grunt.registerTask('versionp', ['gitlog', 'addVersion:prod', 'copy:version']);
-  grunt.registerTask('versionm', ['gitlog', 'addVersion:maint', 'copy:version']);
-
-  grunt.registerTask('build', [
-    'clean',
-    'copy:temp',
-    'openui5_preload:application', // for apps
-    /* for libs
-    'openui5_preload:components',
-    'openui5_preload:library',
-    */
-    'copy:dbg',
-    'uglify:temp',
-    'cssmin:temp',
-    'copy:dist',
-    'createResourcesJson',
-    'createsCachebusterInfoJson',
-    'clean:temp',
-  ]);
-
-  grunt.registerTask('build', [
-    'clean',
-    'copy:temp',
-    'openui5_preload:application', // for apps
-    /* for libs
-    'openui5_preload:components',
-    'openui5_preload:library',
-    */
-    'copy:dbg',
-    'babel:temp',
-    'uglify:temp',
-    'cssmin:temp',
-    'copy:dist',
-    'createResourcesJson',
-    'createsCachebusterInfoJson',
-    'clean:temp',
-  ]);
-
-  grunt.registerTask('deploy', ['nwabap_ui5uploader']);
-
 
   // default task
-  grunt.registerTask('default', ['build']);
+  grunt.registerTask('default', ['tdevopsui5_build:default']);
+
+  grunt.registerTask('build', [
+    'updateMTAVersion:webapp:.',
+    'tdevopsui5_build:default',
+    'run:mta_build',
+  ]);
+
+  grunt.registerTask('server', ['tdevopsui5_server:server']);
+
+  grunt.registerTask('deploy', ['tdevopsui5_deploy:simple']);
+
+  grunt.registerTask('deployd', ['tdevopsui5_version:dev', 'tdevopsui5_deploy:simple']);
+  grunt.registerTask('deploym', ['tdevopsui5_version:main', 'tdevopsui5_deploy:simple']);
+  grunt.registerTask('deployp', ['tdevopsui5_version:prod', 'tdevopsui5_deploy:simple']);
+
+  grunt.registerTask('versiond', ['tdevopsui5_version:dev']);
+  grunt.registerTask('versionm', ['tdevopsui5_version:main']);
+  grunt.registerTask('versionp', ['tdevopsui5_version:prod']);
 };

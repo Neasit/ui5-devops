@@ -1,0 +1,11 @@
+manifest-Version: 1.0
+Created-By: SAP Application Archive Builder 1.0.14
+
+Name: ui5devops/data.zip
+MTA-Module: ui5devops
+Content-Type: application/zip
+
+
+Name: META-INF/mtad.yaml
+Content-Type: text/plain
+

@@ -1,0 +1,16 @@
+{
+  "_version": "1.2",
+  "ui5Path": "C:/SAPUI5/1.71.5/resources",
+  "BSPApp": "ZDEVOPS",
+  "BSPDesc": "Posting Utility for Mobile Business Application",
+  "abapPackage": "ZDEVOPS",
+  "appIndex": "local/experiment",
+  "ui5version": "1.52",
+  "servers": {
+    "GUS": {
+      "serverURL": "https://test.com",
+      "serverPort": "4443",
+      "serverClient": "200"
+    }
+  }
+}
